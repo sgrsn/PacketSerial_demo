@@ -19,10 +19,7 @@ using System.Windows.Threading;
 using System.ComponentModel;
 
 using static COMPortSelector;
-using static SerialPortControl;
 using InteractiveDataDisplay.WPF;
-
-delegate void SerialReceivedHandle();
 
 namespace PacketSerial_demo
 {
@@ -31,6 +28,8 @@ namespace PacketSerial_demo
     /// </summary>
     public partial class MainWindow : System.Windows.Window
     {
+        private SerialPortControl mySerial = new SerialPortControl();
+        private SerialPortControl mySerial2 = new SerialPortControl();
         private static System.Timers.Timer data_incre_timer;
         private int frame_count = 0;
 
@@ -42,9 +41,9 @@ namespace PacketSerial_demo
         public MainWindow()
         {
             InitializeComponent();
-            SerialPortInit();
+            COMPortSelector.Init();
             SerialReceivedHandle data_received_handler = this.UpdateChartHandler;
-            SerialPortControl.SetDatareceivedHandle(data_received_handler);
+            mySerial.SetDatareceivedHandle(data_received_handler);
             this.Closing += new CancelEventHandler(CloseSerialPort);
             this.Closing += new CancelEventHandler(StopTimer);
 
@@ -71,8 +70,8 @@ namespace PacketSerial_demo
                     y[index][i] = y[index][i + 1];
                 }
                 x[index][x[0].Length - 1] = frame_count;
-                y[0][y[0].Length - 1] = Register[0x10];
-                y[1][y[1].Length - 1] = Register[0x09];
+                y[0][y[0].Length - 1] = mySerial.Register[0x10];
+                y[1][y[1].Length - 1] = mySerial.Register[0x09];
                 this.Dispatcher.Invoke((Action)(() =>
                 {
                     linegraph[index].Plot(x[index], y[index]);
@@ -88,12 +87,18 @@ namespace PacketSerial_demo
 
         private void CloseSerialPort(object sender, CancelEventArgs e)
         {
-            SerialPortControl.ClosePort();
+            //mySerial.ClosePort();
+            //COMPortSelector.CloseAll();
         }
 
         private void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
-            COMPortSelector.PushConnectButton();
+            if(mySerial.EnableDisconnect())
+            {
+                COMPortSelector.SetDataReceivedHandle(mySerial.aDataReceivedHandler);
+                COMPortSelector.PushConnectButton(SerialPortComboBox.Text, ref mySerial.port);
+            }
+
             DemoStart();
         }
 
@@ -114,7 +119,10 @@ namespace PacketSerial_demo
         private void Incre(Object source, ElapsedEventArgs e)
         {
             incre_data++;
-            SerialPortControl.WritePieceData((int)incre_data, 0x05);
+            if(COMPortSelector.IsConnected(mySerial.port.PortName))
+            {
+                mySerial.WritePieceData((int)incre_data, 0x05);
+            }
         }
     }
 }

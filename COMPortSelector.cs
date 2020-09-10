@@ -3,21 +3,21 @@ using System.Windows.Controls;
 using System.IO.Ports;
 using System.Windows.Threading;
 using System.ComponentModel;
+using System.Collections.Generic;
 
 using PacketSerial_demo;
 
 delegate void DataReceivedHandler(object sender, SerialDataReceivedEventArgs e);
 static class COMPortSelector
 {
-    public static SerialPort port;
     private static int BAUDRATE = 115200;
     private static MainWindow mainWindow;
     private static ComboBox SerialPortComboBox;
     private static Button ConnectButton;
     private static DispatcherTimer _timer;
-    private static bool isConnected = false;
 
-    
+    private static List<string> Connected_list = new List<string>();
+
     private static DataReceivedHandler data_received_handle_;
 
     public static void Init()
@@ -32,24 +32,27 @@ static class COMPortSelector
     {
         BAUDRATE = baudrate;
     }
-    public static void PushConnectButton()
+    public static bool IsConnected(string port_name)
     {
-        if (IsConnected())
+        return Connected_list.Contains(port_name);
+    }
+    public static void PushConnectButton(string port_name, ref SerialPort port)
+    {
+        if (IsConnected(port_name))
         {
-            DisconnectPort();
+            DisconnectPort(port_name, ref port);
         }
         else
         {
-            ConnectPort();
+            ConnectPort(port_name, ref port);
         }
     }
 
-    public static void ConnectPort()
+    public static void ConnectPort(string port_name, ref SerialPort port)
     {
-        if (isConnected) return;
+        //if (IsConnected(port_name)) return;
 
         UpdateSerialPortComboBox();
-        string port_name = SerialPortComboBox.Text;
         if (String.IsNullOrEmpty(port_name)) return;
         port = new SerialPort(port_name, BAUDRATE, Parity.None, 8, StopBits.One);
         try
@@ -57,31 +60,28 @@ static class COMPortSelector
             port.Open();
             port.DtrEnable = true;
             port.RtsEnable = true;
-            isConnected = true;
             ConnectButton.Content = "Disconnect";
             Console.WriteLine("Connected.");
-            port.DataReceived += new SerialDataReceivedEventHandler(data_received_handle_);
             port.DiscardInBuffer();
+            port.DataReceived += new SerialDataReceivedEventHandler(data_received_handle_);
+
+            Connected_list.Add(port.PortName);
         }
         catch (Exception err)
         {
             Console.WriteLine("Unexpected exception : {0}", err.ToString());
         }
     }
-    public static void DisconnectPort()
+    public static void DisconnectPort(string port_name, ref SerialPort port)
     {
-        if (isConnected)
+        if (IsConnected(port_name))
         {
             port.Close();
             port.Dispose();
-            isConnected = false;
             ConnectButton.Content = "Connect";
             Console.WriteLine("Disconnected.");
+            Connected_list.Remove(port.PortName);
         }
-    }
-    public static bool IsConnected()
-    {
-        return isConnected;
     }
 
     public static void SetDataReceivedHandle(DataReceivedHandler data_received_handle)
@@ -110,6 +110,15 @@ static class COMPortSelector
         // ポート数が1以下であれば0番目を選択
         if (SerialPortComboBox.Items.Count <= 1)
             SerialPortComboBox.SelectedIndex = 0;
+
+        if( IsConnected((string)SerialPortComboBox.SelectedItem) )
+        {
+            ConnectButton.Content = "Disconnect";
+        }
+        else
+        {
+            ConnectButton.Content = "Connect";
+        }
     }
     private static void SetTimer()
     {
