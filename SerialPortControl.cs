@@ -35,6 +35,12 @@ namespace PacketSerial_demo
         {
             _handle = data_received_handle;
         }
+
+        public bool IsAvailable()
+        {
+            if (port == null) return false;
+            return port.IsOpen;
+        }
         public bool EnableDisconnect()
         {
             return enable_disconect;

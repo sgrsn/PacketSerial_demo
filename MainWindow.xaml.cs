@@ -21,6 +21,15 @@ using System.ComponentModel;
 using static COMPortSelector;
 using InteractiveDataDisplay.WPF;
 
+/*
+ * COMPortSelector
+ * 存在するCOMポートと、接続について管理
+ * 
+ * SerialPortController
+ * 接続されているか返す
+ * 
+*/
+
 namespace PacketSerial_demo
 {
     /// <summary>
@@ -28,8 +37,10 @@ namespace PacketSerial_demo
     /// </summary>
     public partial class MainWindow : System.Windows.Window
     {
-        private SerialPortControl mySerial = new SerialPortControl();
-        private SerialPortControl mySerial2 = new SerialPortControl();
+        //private SerialPortControl mySerial = new SerialPortControl();
+        
+        private List<SerialPortControl> mySerial = new List<SerialPortControl>();
+
         private static System.Timers.Timer data_incre_timer;
         private int frame_count = 0;
 
@@ -42,8 +53,10 @@ namespace PacketSerial_demo
         {
             InitializeComponent();
             COMPortSelector.Init();
-            SerialReceivedHandle data_received_handler = this.UpdateChartHandler;
-            mySerial.SetDatareceivedHandle(data_received_handler);
+            //SerialReceivedHandle data_received_handler = this.UpdateChartHandler;
+            mySerial.Add(new SerialPortControl());
+            //mySerial.Last().SetDatareceivedHandle(data_received_handler);
+
             this.Closing += new CancelEventHandler(CloseSerialPort);
             this.Closing += new CancelEventHandler(StopTimer);
 
@@ -70,8 +83,8 @@ namespace PacketSerial_demo
                     y[index][i] = y[index][i + 1];
                 }
                 x[index][x[0].Length - 1] = frame_count;
-                y[0][y[0].Length - 1] = mySerial.Register[0x10];
-                y[1][y[1].Length - 1] = mySerial.Register[0x09];
+                y[0][y[0].Length - 1] = mySerial[0].Register[0x10];
+                y[1][y[1].Length - 1] = mySerial[1].Register[0x09];
                 this.Dispatcher.Invoke((Action)(() =>
                 {
                     linegraph[index].Plot(x[index], y[index]);
@@ -93,13 +106,35 @@ namespace PacketSerial_demo
 
         private void ConnectButton_Click(object sender, RoutedEventArgs e)
         {
-            if(mySerial.EnableDisconnect())
+            if(!COMPortSelector.IsComboBoxItemConnected())
             {
-                COMPortSelector.SetDataReceivedHandle(mySerial.aDataReceivedHandler);
-                COMPortSelector.PushConnectButton(SerialPortComboBox.Text, ref mySerial.port);
+                SerialReceivedHandle data_received_handler = this.UpdateChartHandler;
+                mySerial.Last().SetDatareceivedHandle(data_received_handler);
+
+                COMPortSelector.SetDataReceivedHandle(mySerial.Last().aDataReceivedHandler);
+                COMPortSelector.ConnectPort(SerialPortComboBox.Text, ref mySerial.Last().port);
+                mySerial.Add(new SerialPortControl());
+                DemoStart();
             }
 
-            DemoStart();
+            else
+            {
+                // 切断するmySerialを探す
+                SerialPortControl tmp = new SerialPortControl();
+                foreach (SerialPortControl ser in mySerial)
+                {
+                    if(ser.port != null)
+                    if (ser.port.PortName == SerialPortComboBox.Text)
+                    {
+                        if(ser.EnableDisconnect())
+                        {
+                            COMPortSelector.DisconnectPort(SerialPortComboBox.Text, ref ser.port);
+                            tmp = ser;
+                        }
+                    }
+                }
+                mySerial.Remove(tmp);
+            }
         }
 
         private void comboBox_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -119,9 +154,13 @@ namespace PacketSerial_demo
         private void Incre(Object source, ElapsedEventArgs e)
         {
             incre_data++;
-            if(COMPortSelector.IsConnected(mySerial.port.PortName))
+
+            foreach(SerialPortControl ser in mySerial)
             {
-                mySerial.WritePieceData((int)incre_data, 0x05);
+                if (ser.IsAvailable())
+                {
+                    ser.WritePieceData((int)incre_data, 0x05);
+                }
             }
         }
     }

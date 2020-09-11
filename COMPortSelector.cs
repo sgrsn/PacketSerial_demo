@@ -36,6 +36,11 @@ static class COMPortSelector
     {
         return Connected_list.Contains(port_name);
     }
+
+    public static bool IsComboBoxItemConnected()
+    {
+        return IsConnected((string)SerialPortComboBox.SelectedItem);
+    }
     public static void PushConnectButton(string port_name, ref SerialPort port)
     {
         if (IsConnected(port_name))
