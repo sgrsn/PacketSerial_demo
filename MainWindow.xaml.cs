@@ -49,6 +49,10 @@ namespace PacketSerial_demo
 
         private LineGraph[] linegraph = { new LineGraph(), new LineGraph(), new LineGraph()};
 
+        private static SolidColorBrush lg_color1 = new SolidColorBrush(Color.FromArgb(255, 0, 255, 0));
+        private static SolidColorBrush lg_color2 = new SolidColorBrush(Color.FromArgb(255, 255, 0, 0));
+        private SolidColorBrush[] lg_color = { lg_color1, lg_color2 };
+
         public MainWindow()
         {
             InitializeComponent();
@@ -65,10 +69,13 @@ namespace PacketSerial_demo
             y[0] = new int[100];
             y[1] = new int[100];
 
-            for (int i = 0; i < linegraph.Length; i++)
+            for (int i = 0; i < x.Length; i++)
             {
                 lines.Children.Add(linegraph[i]);
-                linegraph[i].Description = String.Format("Data {0}", i+1);
+                linegraph[i].Stroke = lg_color[i];
+                linegraph[i].Description = String.Format("Data {0}", i + 1);
+                linegraph[i].StrokeThickness = 2;
+                linegraph[i].Plot(x[i], y[i]);
             }
         }
         private void UpdateChartHandler()
