@@ -41,17 +41,6 @@ static class COMPortSelector
     {
         return IsConnected((string)SerialPortComboBox.SelectedItem);
     }
-    public static void PushConnectButton(string port_name, ref SerialPort port)
-    {
-        if (IsConnected(port_name))
-        {
-            DisconnectPort(port_name, ref port);
-        }
-        else
-        {
-            ConnectPort(port_name, ref port);
-        }
-    }
 
     public static void ConnectPort(string port_name, ref SerialPort port)
     {
