@@ -69,6 +69,7 @@
       <SubType>Designer</SubType>
     </ApplicationDefinition>
     <Compile Include="COMPortSelector.cs" />
+    <Compile Include="DrawSerialGraph.cs" />
     <Compile Include="SerialPortControl.cs" />
     <Page Include="MainWindow.xaml">
       <Generator>MSBuild:Compile</Generator>

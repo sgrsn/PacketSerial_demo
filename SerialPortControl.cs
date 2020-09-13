@@ -9,7 +9,6 @@ using System.IO.Ports;
 using System.Windows.Threading;
 using System.Threading;
 using System.ComponentModel;
-using static COMPortSelector;
 
 namespace PacketSerial_demo
 {
@@ -55,7 +54,18 @@ namespace PacketSerial_demo
             indata = 0;
             try
             {
-                ReceiveDataWithSize();
+                if (Application.Current.Dispatcher.CheckAccess())
+                {
+                    ReceiveDataWithSize();
+                }
+                else
+                {
+                    Application.Current.Dispatcher.BeginInvoke(
+                      DispatcherPriority.Background,
+                      new Action(() => {
+                            ReceiveDataWithSize();
+                      }));
+                }
             }
             catch (Exception err)
             {
@@ -228,10 +238,14 @@ namespace PacketSerial_demo
             {
                 port.Write(toWrite_bytes, 0, index);
             }
-            catch(System.InvalidOperationException e)
+            catch (Exception err)
+            {
+                Console.WriteLine("Unexpected exception : {0}", err.ToString());
+            }
+            /*catch(System.InvalidOperationException e)
             {
                 Console.WriteLine(e);
-            }
+            }*/
             enable_disconect = true;
         }
 

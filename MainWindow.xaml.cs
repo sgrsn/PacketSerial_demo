@@ -39,32 +39,31 @@ namespace PacketSerial_demo
     {
         //private SerialPortControl mySerial = new SerialPortControl();
         
-        private List<SerialPortControl> mySerial = new List<SerialPortControl>();
+        //private List<SerialPortControl> mySerial = new List<SerialPortControl>();
 
         private static System.Timers.Timer data_incre_timer;
-        private int frame_count = 0;
+        //private int frame_count = 0;
 
-        private int[][] x = new int[2][];
-        private int[][] y = new int[2][];
+        //private int[][] x = new int[2][];
+        //private int[][] y = new int[2][];
 
-        private LineGraph[] linegraph = { new LineGraph(), new LineGraph(), new LineGraph()};
+        //private LineGraph[] linegraph = { new LineGraph(), new LineGraph(), new LineGraph()};
 
         private static SolidColorBrush lg_color1 = new SolidColorBrush(Color.FromArgb(255, 0, 255, 0));
-        private static SolidColorBrush lg_color2 = new SolidColorBrush(Color.FromArgb(255, 255, 0, 0));
-        private SolidColorBrush[] lg_color = { lg_color1, lg_color2 };
+        //private static SolidColorBrush lg_color2 = new SolidColorBrush(Color.FromArgb(255, 255, 0, 0));
+        //private SolidColorBrush[] lg_color = { lg_color1, lg_color2 };
 
         public MainWindow()
         {
             InitializeComponent();
             COMPortSelector.Init();
-            //SerialReceivedHandle data_received_handler = this.UpdateChartHandler;
-            mySerial.Add(new SerialPortControl());
-            //mySerial.Last().SetDatareceivedHandle(data_received_handler);
+            //mySerial.Add(new SerialPortControl());
 
             this.Closing += new CancelEventHandler(CloseSerialPort);
             this.Closing += new CancelEventHandler(StopTimer);
 
-            x[0] = new int[100];
+            DrawSerialGraph.Init();
+            /*x[0] = new int[100];
             x[1] = new int[100];
             y[0] = new int[100];
             y[1] = new int[100];
@@ -76,9 +75,9 @@ namespace PacketSerial_demo
                 linegraph[i].Description = String.Format("Data {0}", i + 1);
                 linegraph[i].StrokeThickness = 2;
                 linegraph[i].Plot(x[i], y[i]);
-            }
+            }*/
         }
-        private void UpdateChartHandler()
+        /*private void UpdateChartHandler()
         {
             frame_count++;
 
@@ -97,7 +96,7 @@ namespace PacketSerial_demo
                     linegraph[index].Plot(x[index], y[index]);
                 }));
             }
-        }
+        }*/
 
         private void StopTimer(object sender, CancelEventArgs e)
         {
@@ -115,19 +114,21 @@ namespace PacketSerial_demo
         {
             if(!COMPortSelector.IsComboBoxItemConnected())
             {
-                SerialReceivedHandle data_received_handler = this.UpdateChartHandler;
+                /*SerialReceivedHandle data_received_handler = this.UpdateChartHandler;
                 mySerial.Last().SetDatareceivedHandle(data_received_handler);
 
                 COMPortSelector.SetDataReceivedHandle(mySerial.Last().aDataReceivedHandler);
                 COMPortSelector.ConnectPort(SerialPortComboBox.Text, ref mySerial.Last().port);
-                mySerial.Add(new SerialPortControl());
+                mySerial.Add(new SerialPortControl());*/
+                DrawSerialGraph.AddSerialDevice(SerialPortComboBox.Text);
                 DemoStart();
             }
 
             else
             {
+                DrawSerialGraph.RemoveSerialDevice(SerialPortComboBox.Text);
                 // 切断するmySerialを探す
-                SerialPortControl tmp = new SerialPortControl();
+                /*SerialPortControl tmp = new SerialPortControl();
                 foreach (SerialPortControl ser in mySerial)
                 {
                     if(ser.port != null)
@@ -140,7 +141,7 @@ namespace PacketSerial_demo
                         }
                     }
                 }
-                mySerial.Remove(tmp);
+                mySerial.Remove(tmp);*/
             }
         }
 
@@ -161,14 +162,14 @@ namespace PacketSerial_demo
         private void Incre(Object source, ElapsedEventArgs e)
         {
             incre_data++;
-
-            foreach(SerialPortControl ser in mySerial)
+            DrawSerialGraph.SendAllDevice(incre_data, 0x05);
+            /*foreach(SerialPortControl ser in mySerial)
             {
                 if (ser.IsAvailable())
                 {
                     ser.WritePieceData((int)incre_data, 0x05);
                 }
-            }
+            }*/
         }
     }
 }
